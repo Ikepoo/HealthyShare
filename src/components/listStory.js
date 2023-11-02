@@ -1,15 +1,48 @@
 import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Text,
+  FlatList,
+} from 'react-native';
+import FastImage from 'react-native-fast-image';
+import {Story} from '../../data';
 
-const ListStory = ({data}) => {
+const SStory = ({item}) => {
   return (
-    <View style={story.item}>
-      <Text style={story.title}>{data.name}</Text>
-    </View>
+    <TouchableOpacity>
+      <FastImage
+        source={{
+          uri: item.image,
+          priority: FastImage.priority.high,
+        }}
+        style={{...story.item}}>
+        <Text style={{...story.title}}>{item.name}</Text>
+      </FastImage>
+    </TouchableOpacity>
+  );
+};
+const ListStory = () => {
+  return (
+    <ScrollView
+      showsHorizontalScrollIndicator={false}
+      horizontal
+      style={story.container}>
+      <FlatList
+        data={Story}
+        renderItem={({item}) => <SStory item={item} />}
+        keyExtractor={item => item.id}
+        horizontal={true}
+      />
+    </ScrollView>
   );
 };
 export default ListStory;
 const story = StyleSheet.create({
+  container: {
+    marginBottom: 10,
+  },
   item: {
     paddingHorizontal: 14,
     paddingVertical: 20,
