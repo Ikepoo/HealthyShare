@@ -2,8 +2,11 @@ import React from 'react';
 import {TouchableOpacity, Text, View, FlatList, StyleSheet} from 'react-native';
 import FastImage from 'react-native-fast-image';
 import {Bookmark} from 'iconsax-react-native';
+import {useNavigation} from '@react-navigation/native';
+// import {LibraryDetail} from '../screens';
 
 const LLibrary = ({item}) => {
+  const navigation = useNavigation();
   return (
     <FastImage
       style={styles.postingan}
@@ -12,7 +15,10 @@ const LLibrary = ({item}) => {
         priority: FastImage.priority.high,
       }}
       resizeMode={FastImage.resizeMode.cover}>
-      <View>
+      <TouchableOpacity
+        onPress={() =>
+          navigation.navigate('LibraryDetail', {detailId: item.id})
+        }>
         <View>
           <View style={styles.headerText}>
             <Text style={{fontWeight: 'bold', fontSize: 16, color: '#ffffff'}}>
@@ -39,7 +45,7 @@ const LLibrary = ({item}) => {
             />
           </TouchableOpacity>
         </View>
-      </View>
+      </TouchableOpacity>
     </FastImage>
   );
 };
