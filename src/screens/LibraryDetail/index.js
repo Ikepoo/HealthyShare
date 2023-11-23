@@ -1,27 +1,53 @@
-import React from 'react';
+import React, {useRef} from 'react';
 import {useNavigation} from '@react-navigation/native';
-import {Text, View, TouchableOpacity, StyleSheet, image} from 'react-native';
+import {
+  Text,
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Animated,
+} from 'react-native';
 import FastImage from 'react-native-fast-image';
 import {listLibrary} from '../../../data_library';
-import {ArrowLeft} from 'iconsax-react-native';
+import {ArrowLeft, Like1, Send, MessageText1} from 'iconsax-react-native';
 
 const LibraryDetail = ({route}) => {
   const {detailId} = route.params;
   const selectedList = listLibrary.find(detail => detail.id === detailId);
   const navigation = useNavigation();
 
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const diffClampY = Animated.diffClamp(scrollY, 0, 52);
+  const headerY = diffClampY.interpolate({
+    inputRange: [0, 52],
+    outputRange: [0, -52],
+  });
+  const bottomBarY = diffClampY.interpolate({
+    inputRange: [0, 52],
+    outputRange: [0, 52],
+  });
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <Animated.View
+        style={[styles.header, {transform: [{translateY: headerY}]}]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <ArrowLeft color="#000000" variant="Linear" size={24} />
         </TouchableOpacity>
         <Text style={{textTransform: 'uppercase', fontWeight: 'bold'}}>
           {selectedList.title}
         </Text>
-      </View>
+      </Animated.View>
 
-      <View style={styles.content}>
+      <Animated.ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        vertical
+        onScroll={Animated.event(
+          [{nativeEvent: {contentOffset: {y: scrollY}}}],
+          {useNativeDriver: true},
+        )}>
         <FastImage
           style={{...styles.image}}
           source={{
@@ -30,7 +56,23 @@ const LibraryDetail = ({route}) => {
           }}
         />
         <Text style={{textAlign: 'justify'}}>{selectedList.text}</Text>
-      </View>
+      </Animated.ScrollView>
+
+      <Animated.View
+        style={[styles.tombol, {transform: [{translateY: bottomBarY}]}]}>
+        <View style={styles.jumlah}>
+          <TouchableOpacity>
+            <Like1 variant="Bold" size={24} style={{color: '#9dc69d'}} />
+          </TouchableOpacity>
+          <Text style={{marginLeft: 5}}>200</Text>
+        </View>
+        <TouchableOpacity>
+          <MessageText1 variant="Bold" size={24} style={{color: '#9dc69d'}} />
+        </TouchableOpacity>
+        <TouchableOpacity>
+          <Send variant="Bold" size={24} style={{color: '#9dc69d'}} />
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 };
@@ -58,5 +100,17 @@ const styles = StyleSheet.create({
       marginTop: 20,
       borderRadius: 10,
     },
+  },
+  tombol: {
+    justifyContent: 'space-around',
+    flexDirection: 'row',
+    top: 8,
+    paddingVertical: 10,
+  },
+
+  jumlah: {
+    justifyContent: 'space-around',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });

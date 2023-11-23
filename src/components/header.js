@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useRef} from 'react';
 import {
   TouchableOpacity,
   ScrollView,
@@ -6,7 +6,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import {Home2, People, Message2, Book1} from 'iconsax-react-native';
+import {Home2, People, Message2, Book1, BoxSearch} from 'iconsax-react-native';
 // navigation
 import {createStackNavigator, TransitionPresets} from '@react-navigation/stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     backgroundColor: '#e3ffe3',
     alignItems: 'center',
-    height: 50,
+    height: 80,
     elevation: 8,
     justifyContent: 'center',
   },
