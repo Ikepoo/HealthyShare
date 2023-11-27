@@ -1,7 +1,7 @@
 import React from 'react';
 import {createStackNavigator, TransitionPresets} from '@react-navigation/stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {Home, FriendList, Library, LibraryDetail} from '../screens';
+import {Home, FriendList, Library, LibraryDetail, AddPost} from '../screens';
 import {Home2, People, Book1} from 'iconsax-react-native';
 
 const Tab = createBottomTabNavigator();
@@ -83,6 +83,18 @@ const Router = () => {
       <Stack.Screen
         name="LibraryDetail"
         component={LibraryDetail}
+        options={{
+          headerShown: false,
+          animationEnabled: true,
+          animationTypeForReplace: 'pop',
+          gestureEnabled: true,
+          gestureDirection: 'horizontal',
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+      <Stack.Screen
+        name="AddPost"
+        component={AddPost}
         options={{
           headerShown: false,
           animationEnabled: true,
