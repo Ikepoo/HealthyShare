@@ -1,17 +1,47 @@
-import React from 'react';
+import React, {useState, useCallback} from 'react';
 import {
   ScrollView,
   StyleSheet,
   View,
   Text,
   TouchableOpacity,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import {Header, ListStory, ListPost} from '../../components';
-import {Post} from '../../../data';
 import {ElementPlus} from 'iconsax-react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import axios from 'axios';
 
 export default function Home() {
+  const [loading, setLoading] = useState(true);
+  const [postData, setPostData] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const getDataPost = async () => {
+    try {
+      const response = await axios.get(
+        'https://6571c060d61ba6fcc013725b.mockapi.io/healthshare/postingan',
+      );
+      setPostData(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      getDataPost();
+      setRefreshing(false);
+    }, 1500);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      getDataPost();
+    }, []),
+  );
   const navigation = useNavigation();
   return (
     <View style={styles.container}>
@@ -19,12 +49,21 @@ export default function Home() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         vertical
-        style={styles.content}>
-        <ListStory />
-        <View style={styles.header}>
-          <Text style={{fontSize: 16, fontWeight: 'bold'}}>POSTINGAN</Text>
-        </View>
-        <ListPost item={Post} />
+        style={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
+        {loading ? (
+          <ActivityIndicator size={'large'} color="#0078d4" />
+        ) : (
+          <View>
+            <ListStory />
+            <View style={styles.header}>
+              <Text style={{fontSize: 16, fontWeight: 'bold'}}>POSTINGAN</Text>
+            </View>
+            <ListPost item={postData} />
+          </View>
+        )}
       </ScrollView>
       <TouchableOpacity
         style={styles.add}

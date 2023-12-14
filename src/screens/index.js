@@ -4,4 +4,5 @@ import Profile from './Profile';
 import Library from './Library';
 import LibraryDetail from './LibraryDetail';
 import AddPost from './AddPost';
-export {Home, FriendList, Profile, Library, LibraryDetail, AddPost};
+import EditPost from './EditPost';
+export {Home, FriendList, Profile, Library, LibraryDetail, AddPost, EditPost};

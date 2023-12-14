@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,41 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import {ArrowLeft, Image, Sticker, People, Video} from 'iconsax-react-native';
+import {ArrowLeft, Image} from 'iconsax-react-native';
 import {useNavigation} from '@react-navigation/native';
 import axios from 'axios';
 
-const AddPsot = () => {
+const EditPost = ({route}) => {
+  const navigation = useNavigation();
+  const {postId} = route.params;
+  console.log(postId);
   const [loading, setLoading] = useState(false);
+  const [image, setImage] = useState(null);
+  useEffect(() => {
+    getPostById();
+  }, [postId]);
+  const getPostById = async () => {
+    try {
+      const response = await axios.get(
+        `https://6571c060d61ba6fcc013725b.mockapi.io/healthshare/postingan/${postId}`,
+      );
+      setPostData({
+        id: response.data.id,
+        user: response.data.user,
+        category: response.data.category,
+        createAt: response.data.createAt,
+        like: response.data.like,
+        content: response.data.content,
+        f_active: response.data.f_active,
+        p_active: response.data.p_active,
+      });
+      setImage(response.data.image);
+      setLoading(false);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const [postData, setPostData] = useState({
     user: '',
     category: '',
@@ -22,7 +51,7 @@ const AddPsot = () => {
     like: 0,
     content: '',
     p_active: '',
-    p_active: '',
+    f_active: '',
   });
   const handleChange = (key, value) => {
     setPostData({
@@ -30,23 +59,18 @@ const AddPsot = () => {
       [key]: value,
     });
   };
-  const [image, setImage] = useState(null);
-
-  const handleUpload = async () => {
+  const handleUpdate = async () => {
     setLoading(true);
     try {
       await axios
-        .post(
-          'https://6571c060d61ba6fcc013725b.mockapi.io/healthshare/postingan',
+        .put(
+          `https://6571c060d61ba6fcc013725b.mockapi.io/healthshare/postingan/${postId}`,
           {
             user: postData.user,
             category: postData.category,
             image,
-            createAt: new Date(),
             like: postData.like,
             content: postData.content,
-            f_active: 'none',
-            p_active: '',
           },
         )
         .then(function (response) {
@@ -61,9 +85,19 @@ const AddPsot = () => {
       console.log(e);
     }
   };
-
-  const navigation = useNavigation();
-
+  const handleDelete = async () => {
+    await axios
+      .delete(
+        `https://6571c060d61ba6fcc013725b.mockapi.io/healthshare/postingan/${postId}`,
+      )
+      .then(() => {
+        setLoading(false);
+        navigation.navigate('Home');
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  };
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -71,7 +105,7 @@ const AddPsot = () => {
           <ArrowLeft color="#000000" variant="Linear" size={24} />
         </TouchableOpacity>
         <Text style={{textTransform: 'uppercase', fontWeight: 'bold'}}>
-          Buat Postingan
+          Edit Postingan
         </Text>
       </View>
       <ScrollView
@@ -82,7 +116,7 @@ const AddPsot = () => {
         }}>
         <View style={{...textInput.container, borderWidth: 1}}>
           <TextInput
-            placeholder="From"
+            placeholder="User"
             value={postData.user}
             onChangeText={text => handleChange('user', text)}
             placeholderTextColor="rgba(0,0,0,0.6)"
@@ -127,19 +161,18 @@ const AddPsot = () => {
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        <TouchableOpacity style={{...item.content, backgroundColor: 'red'}}>
+        <TouchableOpacity
+          style={{...styles.button, backgroundColor: 'red'}}
+          onPress={handleDelete}>
+          <Text style={styles.buttonLabel}>Delete</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={{...item.content, backgroundColor: 'blue'}}>
           <Image color="#ffffff" variant="Bold" size={22} />
+          <Text style={{...styles.buttonLabel, fontSize: 10}}>Gambar</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={{...item.content, backgroundColor: 'gray'}}>
-          <Video color="#ffffff" variant="Bold" size={22} />
-        </TouchableOpacity>
-        <TouchableOpacity style={{...item.content, backgroundColor: 'green'}}>
-          <Sticker color="#ffffff" variant="Bold" size={22} />
-        </TouchableOpacity>
-        <TouchableOpacity style={{...item.content, backgroundColor: 'orange'}}>
-          <People color="#ffffff" variant="Bold" size={22} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={handleUpload}>
+        <TouchableOpacity
+          style={{...styles.button, backgroundColor: 'green'}}
+          onPress={handleUpdate}>
           <Text style={styles.buttonLabel}>Upload</Text>
         </TouchableOpacity>
       </View>
@@ -151,7 +184,7 @@ const AddPsot = () => {
     </View>
   );
 };
-export default AddPsot;
+export default EditPost;
 
 const styles = StyleSheet.create({
   container: {
@@ -190,7 +223,6 @@ const styles = StyleSheet.create({
   button: {
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: 'blue',
     borderRadius: 5,
     justifyContent: 'center',
     alignItems: 'center',
@@ -236,6 +268,7 @@ const textInput = StyleSheet.create({
     borderRadius: 10,
   },
 });
+
 const item = StyleSheet.create({
   container: {
     justifyContent: 'space-around',
@@ -246,5 +279,6 @@ const item = StyleSheet.create({
   content: {
     padding: 10,
     borderRadius: 10,
+    alignItems: 'center',
   },
 });

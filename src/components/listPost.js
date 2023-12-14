@@ -1,6 +1,7 @@
-import React from 'react';
+import React, {useRef} from 'react';
 import {TouchableOpacity, StyleSheet, Text, View, FlatList} from 'react-native';
 import FastImage from 'react-native-fast-image';
+import ActionSheet from 'react-native-actions-sheet';
 import {
   ProfileCircle,
   Like1,
@@ -8,24 +9,63 @@ import {
   Send,
   MessageAdd,
   ProfileDelete,
+  More,
 } from 'iconsax-react-native';
+import axios from 'axios';
+import {useNavigation} from '@react-navigation/native';
 
 const PPost = ({item}) => {
+  const navigation = useNavigation();
+  const actionSheetRef = useRef(null);
+  const openActionSheet = () => {
+    actionSheetRef.current?.show();
+  };
+  const closeActionSheet = () => {
+    actionSheetRef.current?.hide();
+  };
+
+  const navigateEdit = () => {
+    closeActionSheet();
+    navigation.navigate('EditPost', {postId: item.id});
+  };
+  const handleDelete = async () => {
+    await axios
+      .delete(
+        `https://6571c060d61ba6fcc013725b.mockapi.io/healthshare/postingan/${item.id}`,
+      )
+      .then(() => {
+        closeActionSheet();
+        navigation.navigate('Home');
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  };
   return (
     <View style={konten.container}>
       <View style={konten.postingan}>
-        <View style={inside.header}>
-          <ProfileCircle
-            variant="Bold"
-            size={30}
-            style={{color: '#9dc69d', marginRight: 10}}
-          />
-          <Text style={{fontWeight: 'bold', fontSize: 16}}>{item.name}</Text>
+        <View style={inside.header1}>
+          <View style={inside.header}>
+            <ProfileCircle
+              variant="Bold"
+              size={30}
+              style={{color: '#9dc69d', marginRight: 10}}
+            />
+            <Text style={{fontWeight: 'bold', fontSize: 16}}>{item.user}</Text>
+          </View>
+          <TouchableOpacity onPress={openActionSheet}>
+            <More
+              color="black"
+              variant="Linear"
+              size={20}
+              style={{transform: [{rotate: '90deg'}]}}
+            />
+          </TouchableOpacity>
         </View>
         {/* postingan */}
         <View style={{display: item.p_active}}>
           <View style={{...inside.isi}}>
-            <Text>{item.text}</Text>
+            <Text>{item.content}</Text>
             <FastImage
               style={inside.gambar}
               source={{
@@ -88,6 +128,63 @@ const PPost = ({item}) => {
           </View>
         </View>
       </View>
+      <ActionSheet
+        ref={actionSheetRef}
+        containerStyle={{
+          borderTopLeftRadius: 25,
+          borderTopRightRadius: 25,
+        }}
+        indicatorStyle={{
+          width: 100,
+        }}
+        gestureEnabled={true}
+        defaultOverlayOpacity={0.3}>
+        <TouchableOpacity
+          style={{
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingVertical: 15,
+          }}
+          onPress={navigateEdit}>
+          <Text
+            style={{
+              color: 'black',
+              fontSize: 18,
+            }}>
+            Edit
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingVertical: 15,
+          }}
+          onPress={handleDelete}>
+          <Text
+            style={{
+              color: 'black',
+              fontSize: 18,
+            }}>
+            Delete
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingVertical: 15,
+          }}
+          onPress={closeActionSheet}>
+          <Text
+            style={{
+              color: 'red',
+              fontSize: 18,
+            }}>
+            Cancel
+          </Text>
+        </TouchableOpacity>
+      </ActionSheet>
     </View>
   );
 };
@@ -113,10 +210,16 @@ const konten = StyleSheet.create({
 
 const inside = StyleSheet.create({
   header: {
-    marginVertical: 10,
     justifyContent: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  header1: {
+    marginVertical: 10,
+    justifyContent: 'space-between',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 5,
   },
   isi: {
     marginHorizontal: 10,
