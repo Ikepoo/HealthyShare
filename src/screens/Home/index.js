@@ -1,4 +1,4 @@
-import React, {useState, useCallback} from 'react';
+import React, {useEffect, useState, useCallback} from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -10,38 +10,48 @@ import {
 } from 'react-native';
 import {Header, ListStory, ListPost} from '../../components';
 import {ElementPlus} from 'iconsax-react-native';
-import {useNavigation, useFocusEffect} from '@react-navigation/native';
-import axios from 'axios';
+import {useNavigation} from '@react-navigation/native';
+import firestore from '@react-native-firebase/firestore';
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
   const [postData, setPostData] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
-  const getDataPost = async () => {
-    try {
-      const response = await axios.get(
-        'https://6571c060d61ba6fcc013725b.mockapi.io/healthshare/postingan',
-      );
-      setPostData(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     setTimeout(() => {
-      getDataPost();
+      firestore()
+        .collection('post')
+        .onSnapshot(querySnapshot => {
+          const posts = [];
+          querySnapshot.forEach(documentSnapshot => {
+            posts.push({
+              ...documentSnapshot.data(),
+              id: documentSnapshot.id,
+            });
+          });
+          setPostData(posts);
+        });
       setRefreshing(false);
     }, 1500);
   }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      getDataPost();
-    }, []),
-  );
+  useEffect(() => {
+    const dataset = firestore()
+      .collection('post')
+      .onSnapshot(querySnapshot => {
+        const posts = [];
+        querySnapshot.forEach(documentSnapshot => {
+          posts.push({
+            ...documentSnapshot.data(),
+            id: documentSnapshot.id,
+          });
+        });
+        setPostData(posts);
+        setLoading(false);
+      });
+    return () => dataset();
+  }, []);
+  console.log(postData);
   const navigation = useNavigation();
   return (
     <View style={styles.container}>

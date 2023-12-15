@@ -8,51 +8,66 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import {ArrowLeft, Image} from 'iconsax-react-native';
+import {ArrowLeft, Image, Add} from 'iconsax-react-native';
 import {useNavigation} from '@react-navigation/native';
 import axios from 'axios';
+import ImagePicker from 'react-native-image-crop-picker';
+import storage from '@react-native-firebase/storage';
+import firestore from '@react-native-firebase/firestore';
+import FastImage from 'react-native-fast-image';
 
 const EditPost = ({route}) => {
   const navigation = useNavigation();
   const {postId} = route.params;
-  console.log(postId);
-  const [loading, setLoading] = useState(false);
-  const [image, setImage] = useState(null);
-  useEffect(() => {
-    getPostById();
-  }, [postId]);
-  const getPostById = async () => {
-    try {
-      const response = await axios.get(
-        `https://6571c060d61ba6fcc013725b.mockapi.io/healthshare/postingan/${postId}`,
-      );
-      setPostData({
-        id: response.data.id,
-        user: response.data.user,
-        category: response.data.category,
-        createAt: response.data.createAt,
-        like: response.data.like,
-        content: response.data.content,
-        f_active: response.data.f_active,
-        p_active: response.data.p_active,
-      });
-      setImage(response.data.image);
-      setLoading(false);
-    } catch (error) {
-      console.error(error);
-    }
-  };
 
+  const [loading, setLoading] = useState(true);
+  const [image, setImage] = useState(null);
+  const [oldImage, setOldImage] = useState(null);
   const [postData, setPostData] = useState({
     user: '',
     category: '',
     image: {},
-    createAt: 0,
-    like: 0,
     content: '',
-    p_active: '',
-    f_active: '',
   });
+
+  useEffect(() => {
+    const dataset = firestore()
+      .collection('post')
+      .doc(postId)
+      .onSnapshot(documentSnapshot => {
+        const dataPost = documentSnapshot.data();
+        if (dataPost) {
+          console.log('Blog data: ', dataPost);
+          setPostData({
+            user: dataPost.user,
+            category: dataPost.category,
+            content: dataPost.content,
+          });
+          setOldImage(dataPost.image);
+          setImage(dataPost.image);
+          setLoading(false);
+        } else {
+          console.log(`Blog with ID ${postId} not found.`);
+        }
+      });
+    setLoading(false);
+    return () => dataset();
+  }, [postId]);
+
+  const handleImagePick = async () => {
+    ImagePicker.openPicker({
+      width: 960,
+      height: 540,
+      cropping: true,
+    })
+      .then(image => {
+        console.log(image);
+        setImage(image.path);
+      })
+      .catch(error => {
+        console.log(error);
+      });
+  };
   const handleChange = (key, value) => {
     setPostData({
       ...postData,
@@ -61,28 +76,32 @@ const EditPost = ({route}) => {
   };
   const handleUpdate = async () => {
     setLoading(true);
+    let filename = image.substring(image.lastIndexOf('/') + 1);
+    const extension = filename.split('.').pop();
+    const name = filename.split('.').slice(0, -1).join('.');
+    filename = name + Date.now() + '.' + extension;
+    const reference = storage().ref(`postimages/${filename}`);
     try {
-      await axios
-        .put(
-          `https://6571c060d61ba6fcc013725b.mockapi.io/healthshare/postingan/${postId}`,
-          {
-            user: postData.user,
-            category: postData.category,
-            image,
-            like: postData.like,
-            content: postData.content,
-          },
-        )
-        .then(function (response) {
-          console.log(response);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
+      if (image !== oldImage && oldImage) {
+        const oldImageRef = storage().refFromURL(oldImage);
+        await oldImageRef.delete();
+      }
+      if (image !== oldImage) {
+        await reference.putFile(image);
+      }
+      const url =
+        image !== oldImage ? await reference.getDownloadURL() : oldImage;
+      await firestore().collection('post').doc(postId).update({
+        user: postData.user,
+        category: postData.category,
+        image: url,
+        content: postData.content,
+      });
       setLoading(false);
+      console.log('Blog Updated!');
       navigation.navigate('Home');
-    } catch (e) {
-      console.log(e);
+    } catch (error) {
+      console.log(error);
     }
   };
   const handleDelete = async () => {
@@ -136,18 +155,45 @@ const EditPost = ({route}) => {
             }}
           />
         </View>
-        <View>
-          <TextInput
-            placeholder="letakkan gambar"
-            value={image}
-            onChangeText={text => setImage(text)}
-            placeholderTextColor="rgba(0,0,0,0.6)"
-            multiline
+        {image ? (
+          <View
             style={{
               ...textInput.inptImage,
-            }}
-          />
-        </View>
+            }}>
+            <FastImage
+              style={{width: '100%', height: 120, borderRadius: 5}}
+              source={{
+                uri: image,
+                headers: {Authorization: 'someAuthToken'},
+                priority: FastImage.priority.high,
+              }}
+              resizeMode={FastImage.resizeMode.cover}
+            />
+            <TouchableOpacity
+              style={{
+                position: 'absolute',
+                top: -5,
+                right: -5,
+                backgroundColor: '#000000',
+                borderRadius: 25,
+              }}
+              onPress={() => setImage(null)}>
+              <Add
+                size={20}
+                variant="Linear"
+                color="#ffffff"
+                style={{transform: [{rotate: '45deg'}]}}
+              />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View
+            style={{
+              ...textInput.inptImage,
+            }}>
+            <Text>Gambar</Text>
+          </View>
+        )}
         <View style={[textInput.container, {padding: 10, borderWidth: 1}]}>
           <TextInput
             placeholder="# healthyShare, HealthyHow, ....."
@@ -166,7 +212,9 @@ const EditPost = ({route}) => {
           onPress={handleDelete}>
           <Text style={styles.buttonLabel}>Delete</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={{...item.content, backgroundColor: 'blue'}}>
+        <TouchableOpacity
+          onPress={handleImagePick}
+          style={{...item.content, backgroundColor: 'blue'}}>
           <Image color="#ffffff" variant="Bold" size={22} />
           <Text style={{...styles.buttonLabel, fontSize: 10}}>Gambar</Text>
         </TouchableOpacity>
@@ -265,7 +313,9 @@ const textInput = StyleSheet.create({
     height: 120,
     borderColor: 'rgba(0,0,0,0.2)',
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

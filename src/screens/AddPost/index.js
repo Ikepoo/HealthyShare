@@ -8,9 +8,12 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import {ArrowLeft, Image, Sticker, People, Video} from 'iconsax-react-native';
+import {ArrowLeft, Image, Add} from 'iconsax-react-native';
 import {useNavigation} from '@react-navigation/native';
-import axios from 'axios';
+import ImagePicker from 'react-native-image-crop-picker';
+import storage from '@react-native-firebase/storage';
+import firestore from '@react-native-firebase/firestore';
+import FastImage from 'react-native-fast-image';
 
 const AddPsot = () => {
   const [loading, setLoading] = useState(false);
@@ -33,33 +36,46 @@ const AddPsot = () => {
   const [image, setImage] = useState(null);
 
   const handleUpload = async () => {
+    let filename = image.substring(image.lastIndexOf('/') + 1);
+    const extension = filename.split('.').pop();
+    const name = filename.split('.').slice(0, -1).join('.');
+    filename = name + Date.now() + '.' + extension;
+    const reference = storage().ref(`postimages/${filename}`);
+
     setLoading(true);
     try {
-      await axios
-        .post(
-          'https://6571c060d61ba6fcc013725b.mockapi.io/healthshare/postingan',
-          {
-            user: postData.user,
-            category: postData.category,
-            image,
-            createAt: new Date(),
-            like: postData.like,
-            content: postData.content,
-            f_active: 'none',
-            p_active: '',
-          },
-        )
-        .then(function (response) {
-          console.log(response);
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
+      await reference.putFile(image);
+      const url = await reference.getDownloadURL();
+      await firestore().collection('post').add({
+        user: postData.user,
+        category: postData.category,
+        image: url,
+        createAt: new Date(),
+        like: postData.like,
+        content: postData.content,
+        f_active: 'none',
+        p_active: '',
+      });
       setLoading(false);
+      console.log('Post added!');
       navigation.navigate('Home');
-    } catch (e) {
-      console.log(e);
+    } catch (error) {
+      console.log(error);
     }
+  };
+  const handleImagePick = async () => {
+    ImagePicker.openPicker({
+      width: 960,
+      height: 540,
+      cropping: true,
+    })
+      .then(image => {
+        console.log(image);
+        setImage(image.path);
+      })
+      .catch(error => {
+        console.log(error);
+      });
   };
 
   const navigation = useNavigation();
@@ -102,18 +118,45 @@ const AddPsot = () => {
             }}
           />
         </View>
-        <View>
-          <TextInput
-            placeholder="letakkan gambar"
-            value={image}
-            onChangeText={text => setImage(text)}
-            placeholderTextColor="rgba(0,0,0,0.6)"
-            multiline
+        {image ? (
+          <View
             style={{
               ...textInput.inptImage,
-            }}
-          />
-        </View>
+            }}>
+            <FastImage
+              style={{width: '100%', height: 120, borderRadius: 5}}
+              source={{
+                uri: image,
+                headers: {Authorization: 'someAuthToken'},
+                priority: FastImage.priority.high,
+              }}
+              resizeMode={FastImage.resizeMode.cover}
+            />
+            <TouchableOpacity
+              style={{
+                position: 'absolute',
+                top: -5,
+                right: -5,
+                backgroundColor: '#000000',
+                borderRadius: 25,
+              }}
+              onPress={() => setImage(null)}>
+              <Add
+                size={20}
+                variant="Linear"
+                color="#ffffff"
+                style={{transform: [{rotate: '45deg'}]}}
+              />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View
+            style={{
+              ...textInput.inptImage,
+            }}>
+            <Text>Gambar</Text>
+          </View>
+        )}
         <View style={[textInput.container, {padding: 10, borderWidth: 1}]}>
           <TextInput
             placeholder="# healthyShare, HealthyHow, ....."
@@ -127,17 +170,16 @@ const AddPsot = () => {
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        <TouchableOpacity style={{...item.content, backgroundColor: 'red'}}>
+        <TouchableOpacity
+          onPress={handleImagePick}
+          style={{
+            ...item.content,
+            backgroundColor: 'green',
+            justifyContent: 'space-evenly',
+            flexDirection: 'row',
+          }}>
           <Image color="#ffffff" variant="Bold" size={22} />
-        </TouchableOpacity>
-        <TouchableOpacity style={{...item.content, backgroundColor: 'gray'}}>
-          <Video color="#ffffff" variant="Bold" size={22} />
-        </TouchableOpacity>
-        <TouchableOpacity style={{...item.content, backgroundColor: 'green'}}>
-          <Sticker color="#ffffff" variant="Bold" size={22} />
-        </TouchableOpacity>
-        <TouchableOpacity style={{...item.content, backgroundColor: 'orange'}}>
-          <People color="#ffffff" variant="Bold" size={22} />
+          <Text style={{color: 'white'}}>Gambar</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.button} onPress={handleUpload}>
           <Text style={styles.buttonLabel}>Upload</Text>
@@ -184,7 +226,6 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-
     elevation: 5,
   },
   button: {
@@ -233,7 +274,9 @@ const textInput = StyleSheet.create({
     height: 120,
     borderColor: 'rgba(0,0,0,0.2)',
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 const item = StyleSheet.create({
@@ -245,6 +288,7 @@ const item = StyleSheet.create({
   },
   content: {
     padding: 10,
-    borderRadius: 10,
+    borderRadius: 5,
+    width: 150,
   },
 });

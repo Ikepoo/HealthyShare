@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "902560071017",
+    "project_id": "healthyshare-b6c68",
+    "storage_bucket": "healthyshare-b6c68.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:902560071017:android:4b44606038d1a33249d1f8",
+        "android_client_info": {
+          "package_name": "com.healthyshare"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC2JTeZK2Fi3go4aojrJUzv4yMxs55st74"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
