@@ -8,6 +8,9 @@ import {
   LibraryDetail,
   AddPost,
   EditPost,
+  SplashScreen,
+  Login,
+  Register,
 } from '../screens';
 import {Home2, People, Book1} from 'iconsax-react-native';
 
@@ -81,7 +84,7 @@ const MainApp = () => {
 
 const Router = () => {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator initialRouteName="SplashScreen">
       <Stack.Screen
         name="MainApp"
         component={MainApp}
@@ -122,6 +125,21 @@ const Router = () => {
           gestureDirection: 'horizontal',
           ...TransitionPresets.SlideFromRightIOS,
         }}
+      />
+      <Stack.Screen
+        name="SplashScreen"
+        component={SplashScreen}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="Register"
+        component={Register}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="Login"
+        component={Login}
+        options={{headerShown: false}}
       />
     </Stack.Navigator>
   );

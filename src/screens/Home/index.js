@@ -36,21 +36,28 @@ export default function Home() {
     }, 1500);
   }, []);
   useEffect(() => {
-    const dataset = firestore()
-      .collection('post')
-      .onSnapshot(querySnapshot => {
-        const posts = [];
-        querySnapshot.forEach(documentSnapshot => {
-          posts.push({
-            ...documentSnapshot.data(),
-            id: documentSnapshot.id,
-          });
+    const fetchBlogData = () => {
+      try {
+        const blogCollection = firestore().collection('post');
+        const unsubscribeBlog = blogCollection.onSnapshot(querySnapshot => {
+          const posts = querySnapshot.docs.map(doc => ({
+            ...doc.data(),
+            id: doc.id,
+          }));
+          setPostData(posts);
+          setLoading(false);
         });
-        setPostData(posts);
-        setLoading(false);
-      });
-    return () => dataset();
+
+        return () => {
+          unsubscribeBlog();
+        };
+      } catch (error) {
+        console.error('Error fetching blog data:', error);
+      }
+    };
+    fetchBlogData();
   }, []);
+
   console.log(postData);
   const navigation = useNavigation();
   return (

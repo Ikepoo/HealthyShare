@@ -1,4 +1,4 @@
-import React, {useRef} from 'react';
+import React, {useRef, useEffect, useState} from 'react';
 import {TouchableOpacity, StyleSheet, Text, View, FlatList} from 'react-native';
 import FastImage from 'react-native-fast-image';
 import ActionSheet from 'react-native-actions-sheet';
@@ -13,12 +13,42 @@ import {
 } from 'iconsax-react-native';
 import axios from 'axios';
 import {useNavigation} from '@react-navigation/native';
-
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 const PPost = ({item}) => {
   const navigation = useNavigation();
   const actionSheetRef = useRef(null);
+  const [profileData, setProfileData] = useState(null);
+  useEffect(() => {
+    const fetchProfileData = () => {
+      try {
+        const user = auth().currentUser;
+        if (user) {
+          const userId = user.uid;
+          const userRef = firestore().collection('users').doc(userId);
+
+          const unsubscribeProfile = userRef.onSnapshot(doc => {
+            if (doc.exists) {
+              const userData = doc.data();
+              setProfileData(userData);
+            } else {
+              console.error('Dokumen pengguna tidak ditemukan.');
+            }
+          });
+          return () => {
+            unsubscribeProfile();
+          };
+        }
+      } catch (error) {
+        console.error('Error fetching profile data:', error);
+      }
+    };
+    fetchProfileData();
+  }, []);
   const openActionSheet = () => {
+    // if (item.user == profileData.fullName) {
     actionSheetRef.current?.show();
+    // }
   };
   const closeActionSheet = () => {
     actionSheetRef.current?.hide();
